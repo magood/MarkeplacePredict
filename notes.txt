@@ -1,0 +1,2 @@
+You can find every marketplace episode page by modifying the date in the url below:
+https://www.marketplace.org/shows/marketplace/2019/04/10/
