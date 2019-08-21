@@ -78,26 +78,31 @@ def get_music_df():
     return mdf
 
 
-def get_all_df(tickers):
-    mdf = get_music_df()
-    mindate = mdf.index.min().strftime('%Y-%m-%d')
-    maxdate = mdf.index.max().strftime('%Y-%m-%d')
+def build_index_df(tickers, mindate, maxdate):
     df = None
     for ticker in tickers:
         idx_df = get_ticker_data(ticker, mindate, maxdate)
         augment_financials(idx_df)
-        #rename columns with index postfix
+        # rename columns with index postfix
         idx_df = idx_df.add_suffix('_' + ticker)
         if df is None:
             df = pd.DataFrame(index=idx_df.index)
         df = idx_df.join(df, how='inner')
-    df = df.join(mdf, how='inner')
     # Now possibly do any inter-index calculations.
     # What is the difference in return across indices from highest to lowest?
     df['max_return'] = df[['return_^GSPC', 'return_^IXIC', 'return_^DJI']].max(axis=1)
     df['min_return'] = df[['return_^GSPC', 'return_^IXIC', 'return_^DJI']].min(axis=1)
     df['return_diff'] = df['max_return'] - df['min_return']
     df = df.dropna()
+    return df
+
+
+def get_all_df(tickers):
+    mdf = get_music_df()
+    mindate = mdf.index.min().strftime('%Y-%m-%d')
+    maxdate = mdf.index.max().strftime('%Y-%m-%d')
+    df = build_index_df(tickers, mindate, maxdate)
+    df = df.join(mdf, how='inner')
     return df
 
 
@@ -158,6 +163,19 @@ def plot_correlations(df):
     return f
 
 
+def drop_useless_dim_prefixes(df, remove_field_prefixes):
+    """
+        Drops dimensions/columns from the df that do not appear to be useful.
+        Provide a list of prefixes for useless columns (remove_field_prefixes).
+    """
+    droplist = []
+    for t in all_tickers:
+        for pfx in remove_field_prefixes:
+            droplist.append(f'{pfx}_{t}')
+    df.drop(droplist, axis=1, inplace=True)
+    return df
+
+
 if __name__ == '__main__':
     df = get_all_df(all_tickers)
     # should get rid of a bunch of stuff we don't think will be predictive before doing a bunch of plots because it's confusing.
@@ -181,11 +199,7 @@ if __name__ == '__main__':
     # We can see that there are many highly-correlated features, so we can remove many of those.
     # High, low, open, close, adjclose all worthless.
     remove_field_prefixes = ['adjclose', 'close', 'high', 'low', 'open']
-    droplist = []
-    for t in all_tickers:
-        for pfx in remove_field_prefixes:
-            droplist.append(f'{pfx}_{t}')
-    df.drop(droplist, axis=1, inplace=True)
+    df = drop_useless_dim_prefixes(df, remove_field_prefixes)
 
     df.to_csv(utils.ds_csv_file_name)
 

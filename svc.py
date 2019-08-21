@@ -13,9 +13,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 import sklearn.model_selection as ms
-import utils, json
+import utils, json, joblib
 
 alg = 'SVM'
+clf_type = f'{alg}_RBF'
+pipe = Pipeline([
+    ('Scale', StandardScaler()),
+    (alg, SVC(kernel='rbf', class_weight='balanced', random_state=0))
+])
 
 
 def run_for_dataset(X, y, ds, do_C_search=True, do_gamma_search=True, do_final_results=False, final_params=None):
@@ -25,11 +30,7 @@ def run_for_dataset(X, y, ds, do_C_search=True, do_gamma_search=True, do_final_r
 
     # Gaussian RBF SVC
     # Vary params C, gamma.
-    clf_type = f'{alg}_RBF'
-    pipe = Pipeline([
-        ('Scale', StandardScaler()),
-        (alg, SVC(kernel='rbf', class_weight='balanced', random_state=0))
-    ])
+    
     rbf_c_params = [10**i for i in range(-4, 6)]
     gamma_default = 1. / X_train.shape[1]  # gamma AUTO (defualt) is 1 / n_features!
     rbf_gamma_params = np.linspace(gamma_default / 50, gamma_default * 7, 30)
@@ -88,6 +89,11 @@ def run_for_dataset(X, y, ds, do_C_search=True, do_gamma_search=True, do_final_r
         final_params = cv.best_params_
         with open(f'output/{clf_type}_{ds.ds_name}_finalparams.json', 'w') as fp:
             json.dump(final_params, fp, sort_keys=True, indent=4)
+        # retrain and save model (on full trainint data)
+        pipe.set_params(**final_params)
+        pipe.fit(X, y)
+        joblib.dump(pipe, f'models/{clf_type}_{ds.ds_name}_model.joblib')
+        joblib.dump(ds.target_labelencoder, f'models/{clf_type}_{ds.ds_name}_labelencoder.joblib')
 
         # Don't have data learning curves, but I can guess what the answer will be - need more data.
 
@@ -97,6 +103,31 @@ def run_for_dataset(X, y, ds, do_C_search=True, do_gamma_search=True, do_final_r
         # pipe.set_params(**final_params)
         # iter_range = np.linspace(22, 223, 5).astype('int') ** 2
         # iterationLC(pipe, X_train, y_train, X_test, y_test, {'SVM__max_iter': iter_range}, clf_type, ds.ds_name)
+
+
+def predict(new_X, ds):
+    model = None
+    labelencoder = None
+    full_retrain = False
+    if full_retrain:
+        final_params = None
+        X, y = utils.ix.get_ds(drop_infrequent_labels=True)
+        with open(f'output/{clf_type}_{ds.ds_name}_finalparams.json', 'r') as fp:
+            final_params = json.load(fp)
+        if final_params is not None:
+            pipe.set_params(**final_params)
+            print("Retraining model on full data...")
+            pipe.fit(X, y)
+            model = pipe
+            labelencoder = ds.target_labelencoder
+    else:
+        model = joblib.load(f'models/{clf_type}_{ds.ds_name}_model.joblib')
+        labelencoder = joblib.load(f'models/{clf_type}_{ds.ds_name}_labelencoder.joblib')
+
+    if new_X is not None and model is not None:
+        prediction_codes = model.predict(new_X)
+        prediction = labelencoder.inverse_transform(prediction_codes)[0]
+        return prediction
 
 
 if __name__ == '__main__':
