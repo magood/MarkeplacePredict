@@ -8,6 +8,7 @@ from yahoofinancials import YahooFinancials as YF
 import joblib
 import eda, svc, utils
 from datetime import datetime, timedelta
+import click
 
 
 def download_ticker(ticker, start_date, end_date):
@@ -83,9 +84,21 @@ def predict_for_day(day):
         return pred, df, X
 
 
-if __name__ == '__main__':
-    pred, df, X = predict_for_day(datetime.today())
+@click.command()
+@click.option('--daysago', default=0, help='Offset of day for which to predict music (0=today, 1=yesterday, etc)')
+def predict_and_print(daysago):
+    """
+    Predict the music that will play during the "Numbers" segment on the public radio program Marketplace,
+    given that the market results are available for that day.
+    """
+    prediction_day = datetime.today() - timedelta(days=daysago)
+    formatted_day = prediction_day.strftime("%Y-%m-%d")
+    pred, df, X = predict_for_day(prediction_day)
     if pred is not None:
-        print("Today:")
+        print(f"Feature vector on {formatted_day}:")
         print(df)
         print(f"Predicted Music: {pred}")
+
+
+if __name__ == '__main__':
+    predict_and_print()
