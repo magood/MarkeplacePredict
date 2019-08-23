@@ -6,19 +6,19 @@ from sklearn.preprocessing import LabelEncoder
 class DS:
     """Class to encapsulate names and paths and fields for a dataset"""
     
-    def __init__(self, ds_name, target_field):
+    def __init__(self, ds_name, target_field, outfile_name):
         self.ds_name = ds_name
         self.target_field = target_field
         self.target_labelencoder = LabelEncoder()
-
+        self.ds_csv_file_name = outfile_name
+        
         def get_ds(self):
             pass
 
 
 class IndexDS(DS):
     def get_ds(self, drop_infrequent_labels=False):
-        ds_csv_file_name = 'cleaned_index_data.csv'
-        df = pd.read_csv(ds_csv_file_name)
+        df = pd.read_csv(self.ds_csv_file_name)
         df.set_index('date', inplace=True)
         if drop_infrequent_labels:
             low_labels = df[ix.target_field].value_counts() <= 2
@@ -32,4 +32,4 @@ class IndexDS(DS):
         X = X.astype(np.float64)
         return X, Y
 
-ix = IndexDS('ix','Music')
+ix = IndexDS('ix','Music', 'cleaned_index_data.csv')

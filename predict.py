@@ -78,6 +78,8 @@ def df_to_numpy_array(df):
 def predict_for_day(day):
     ix = utils.ix
     df = get_day_dataframe(day)
+    if df is None:
+        raise ValueError('Could not get market data for the day, likely the markets are not closed yet.')
     X = df_to_numpy_array(df)
     if X is not None:
         pred = svc.predict(X, ix)
@@ -95,9 +97,12 @@ def predict_and_print(daysago):
     formatted_day = prediction_day.strftime("%Y-%m-%d")
     pred, df, X = predict_for_day(prediction_day)
     if pred is not None:
-        print(f"Feature vector on {formatted_day}:")
-        print(df)
+        # print(f"Feature vector on {formatted_day}:")
+        # print(df)
         print(f"Predicted Music: {pred}")
+        with open('pred.txt', 'w') as file:
+            file.write(pred)
+
 
 
 if __name__ == '__main__':

@@ -201,7 +201,7 @@ if __name__ == '__main__':
     remove_field_prefixes = ['adjclose', 'close', 'high', 'low', 'open']
     df = drop_useless_dim_prefixes(df, remove_field_prefixes)
 
-    df.to_csv(utils.ds_csv_file_name)
+    df.to_csv(utils.ix.ds_csv_file_name)
 
     # print(df.describe())
     # scatter_markers(df, 'return_^GSPC', 'swing_^GSPC')
