@@ -32,4 +32,5 @@ class IndexDS(DS):
         X = X.astype(np.float64)
         return X, Y
 
-ix = IndexDS('ix','Music', 'cleaned_index_data.csv')
+
+ix = IndexDS('ix', 'Music', 'cleaned_index_data.csv')

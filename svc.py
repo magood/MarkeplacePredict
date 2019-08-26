@@ -1,4 +1,4 @@
-# Support Vector Classifier
+# Support Vector Classifier model tuning
 # py 3, using "mplace" conda env.
 
 import numpy as np
@@ -89,7 +89,7 @@ def run_for_dataset(X, y, ds, do_C_search=True, do_gamma_search=True, do_final_r
         final_params = cv.best_params_
         with open(f'output/{clf_type}_{ds.ds_name}_finalparams.json', 'w') as fp:
             json.dump(final_params, fp, sort_keys=True, indent=4)
-        # retrain and save model (on full trainint data)
+        # retrain and save model (on full training data)
         pipe.set_params(**final_params)
         pipe.fit(X, y)
         joblib.dump(pipe, f'models/{clf_type}_{ds.ds_name}_model.joblib')

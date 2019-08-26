@@ -62,10 +62,6 @@ def get_index_music(ticker):
     mdf.drop('Date', axis=1, inplace=True)
     mdf = mdf[mdf['Music'].isnull() == False]
     df = sp.join(mdf, how='inner')
-    #sp.rename(columns={'return':'sp_return'}, inplace=True)
-    #df = df.join(sp['sp_return'], how='left')
-    #sp.rename(columns={'return':'sp_return'}, inplace=True)
-    #df = df.join(sp['sp_return'], how='left')
     return df
 
 
